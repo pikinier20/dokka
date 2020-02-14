@@ -8,6 +8,9 @@ import org.jetbrains.dokka.base.renderers.platforms
 import org.jetbrains.dokka.pages.*
 import org.jetbrains.dokka.transformers.pages.PageTransformer
 
+val defaultPreprocessors =
+    listOf(RootCreator, SearchPageInstaller, NavigationPageInstaller, ResourceInstaller, StyleAndScriptsAppender)
+
 object RootCreator : PageTransformer {
     override fun invoke(input: RootPageNode) =
         RendererSpecificRootPage("", listOf(input), RenderingStrategy.DoNothing)
