@@ -8,7 +8,7 @@ class ExpectTest : ExpectUtils() {
 
     @TestFactory
     fun expectTest() = testDir.dirsWithFormats(formats).map { (p, f) ->
-        dynamicTest(p.fileName.toString()) { testOutput(p, f) }
+        dynamicTest("${p.fileName}-$f") { testOutput(p, f) }
     }
 
     private fun testOutput(p: Path, outFormat: String) {
