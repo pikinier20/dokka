@@ -37,6 +37,6 @@ class DokkaBasicTests : AbstractCoreTest() {
         }
     }
 
-    fun ModulePageNode.getClasslikeToMemberMap() =
+    private fun ModulePageNode.getClasslikeToMemberMap() =
         this.parentMap.filterValues { it is ClasslikePageNode }.entries.groupBy({ it.value }) { it.key }
 }

@@ -2,7 +2,7 @@ package issues
 
 import org.jetbrains.dokka.model.Class
 import org.jetbrains.dokka.model.Function
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import utils.AbstractModelTest
 
 class IssuesTest : AbstractModelTest("/src/main/kotlin/issues/Test.kt", "issues") {

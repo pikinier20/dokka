@@ -2,7 +2,7 @@ package model
 
 import org.jetbrains.dokka.model.Function
 import org.jetbrains.dokka.model.Package
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import utils.*
 
 class FunctionTest : AbstractModelTest("/src/main/kotlin/function/Test.kt", "function") {

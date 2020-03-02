@@ -4,6 +4,7 @@ import org.jetbrains.dokka.model.Enum
 import org.jetbrains.dokka.pages.ClasslikePageNode
 import org.jetbrains.dokka.pages.ModulePageNode
 import org.junit.Assert.*
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.jetbrains.dokka.testApi.testRunner.AbstractCoreTest
@@ -79,10 +80,10 @@ class EnumsTest : AbstractCoreTest() {
                     }
                 }
             }
-            pagesGenerationStage = {
-                val map = it.getClasslikeToMemberMap()
+            pagesGenerationStage = { module ->
+                val map = module.getClasslikeToMemberMap()
                 val test = map.filterKeys { it.name == "Test" }.values.firstOrNull()
-                assertTrue(test != null) { "Test not found" }
+                assertNotNull(test, "Test not found")
                 assertTrue(test!!.any { it.name == "E1" } && test.any { it.name == "E2" }) { "Enum entries missing in parent" }
                 assertTrue(map.keys.any { it.name == "E1" } && map.keys.any { it.name == "E2" }) { "Enum entries missing" }
             }

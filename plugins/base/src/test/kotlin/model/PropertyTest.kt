@@ -3,7 +3,7 @@ package model
 import org.jetbrains.dokka.model.KotlinVisibility
 import org.jetbrains.dokka.model.Package
 import org.jetbrains.dokka.model.Property
-import org.junit.Test
+import org.junit.jupiter.api.Test
 import utils.AbstractModelTest
 import utils.assertNotNull
 
