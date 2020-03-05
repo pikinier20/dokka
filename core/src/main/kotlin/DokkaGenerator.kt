@@ -54,6 +54,8 @@ class DokkaGenerator(
         logger.progress("Rendering")
         render(transformedPages, context)
 
+        context.unusedPoints.takeIf { it.isNotEmpty() }
+            ?.also { logger.warn("Unused extension points found: ${it.joinToString(", ")}") }
         logger.report()
     }
 
@@ -73,7 +75,7 @@ class DokkaGenerator(
         platforms: Map<PlatformData, EnvironmentAndFacade>,
         context: DokkaContext
     ) = platforms.map { (pdata, _) -> translateDescriptors(pdata, context) } +
-            platforms.map { (pdata, _)  -> translatePsi(pdata, context) }
+            platforms.map { (pdata, _) -> translatePsi(pdata, context) }
 
     fun mergeDocumentationModels(
         modulesFromPlatforms: List<Module>,
@@ -138,7 +140,7 @@ class DokkaGenerator(
         val sourceRoots = environment.configuration.get(CLIConfigurationKeys.CONTENT_ROOTS)
             ?.filterIsInstance<JavaSourceRoot>()
             ?.map { it.file }
-                ?: listOf()
+            ?: listOf()
         val localFileSystem = VirtualFileManager.getInstance().getFileSystem("file")
 
         val psiFiles = sourceRoots.map { sourceRoot ->
