@@ -314,7 +314,8 @@ data class Parameter(
     override val documentation: PlatformDependent<DocumentationNode>,
     val type: TypeWrapper,
     override val platformData: List<PlatformData>,
-    override val extra: PropertyContainer<Parameter> = PropertyContainer.empty()
+    override val extra: PropertyContainer<Parameter> = PropertyContainer.empty(),
+    val sources: DocumentableSource? = null
 ) : Documentable(), WithExtraProperties<Parameter> {
     override val children: List<Nothing>
         get() = emptyList()

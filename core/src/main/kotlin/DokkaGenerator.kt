@@ -10,6 +10,7 @@ import org.jetbrains.dokka.pages.PlatformData
 import org.jetbrains.dokka.pages.RootPageNode
 import org.jetbrains.dokka.plugability.DokkaContext
 import org.jetbrains.dokka.plugability.DokkaPlugin
+import org.jetbrains.dokka.plugability.UnresolvedTypeHandler
 import org.jetbrains.dokka.utilities.DokkaLogger
 import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageLocation
@@ -34,7 +35,12 @@ class DokkaGenerator(
         val platforms: Map<PlatformData, EnvironmentAndFacade> = setUpAnalysis(configuration)
 
         logger.progress("Initializing plugins")
-        val context = initializePlugins(configuration, logger, platforms)
+        val context = initializePlugins(
+            configuration,
+            logger,
+            platforms,
+            unresolvedTypeHandler = configuration.unresolvedTypeHandler
+        )
 
         logger.progress("Creating documentation models")
         val modulesFromPlatforms = createDocumentationModels(platforms, context)
@@ -66,14 +72,15 @@ class DokkaGenerator(
         configuration: DokkaConfiguration,
         logger: DokkaLogger,
         platforms: Map<PlatformData, EnvironmentAndFacade>,
-        pluginOverrides: List<DokkaPlugin> = emptyList()
-    ) = DokkaContext.create(configuration, logger, platforms, pluginOverrides)
+        pluginOverrides: List<DokkaPlugin> = emptyList(),
+        unresolvedTypeHandler: UnresolvedTypeHandler
+    ) = DokkaContext.create(configuration, logger, platforms, pluginOverrides, unresolvedTypeHandler)
 
     fun createDocumentationModels(
         platforms: Map<PlatformData, EnvironmentAndFacade>,
         context: DokkaContext
     ) = platforms.map { (pdata, _) -> translateDescriptors(pdata, context) } +
-            platforms.map { (pdata, _)  -> translatePsi(pdata, context) }
+            platforms.map { (pdata, _) -> translatePsi(pdata, context) }
 
     fun mergeDocumentationModels(
         modulesFromPlatforms: List<Module>,
@@ -138,7 +145,7 @@ class DokkaGenerator(
         val sourceRoots = environment.configuration.get(CLIConfigurationKeys.CONTENT_ROOTS)
             ?.filterIsInstance<JavaSourceRoot>()
             ?.map { it.file }
-                ?: listOf()
+            ?: listOf()
         val localFileSystem = VirtualFileManager.getInstance().getFileSystem("file")
 
         val psiFiles = sourceRoots.map { sourceRoot ->

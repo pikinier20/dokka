@@ -1,9 +1,12 @@
 package org.jetbrains.dokka.plugability
 
 import org.jetbrains.dokka.DokkaConfiguration
-import org.jetbrains.dokka.utilities.DokkaLogger
 import org.jetbrains.dokka.EnvironmentAndFacade
 import org.jetbrains.dokka.pages.PlatformData
+import org.jetbrains.dokka.utilities.DokkaLogger
+import org.jetbrains.kotlin.idea.refactoring.fqName.fqName
+import org.jetbrains.kotlin.types.KotlinType
+import org.jetbrains.kotlin.types.isError
 import java.io.File
 import java.net.URLClassLoader
 import java.util.*
@@ -22,15 +25,17 @@ interface DokkaContext {
     val logger: DokkaLogger
     val configuration: DokkaConfiguration
     val platforms: Map<PlatformData, EnvironmentAndFacade>
+    val unresolvedTypeHandler: UnresolvedTypeHandler
 
     companion object {
         fun create(
             configuration: DokkaConfiguration,
             logger: DokkaLogger,
             platforms: Map<PlatformData, EnvironmentAndFacade>,
-            pluginOverrides: List<DokkaPlugin>
+            pluginOverrides: List<DokkaPlugin>,
+            unresolvedTypeHandler: UnresolvedTypeHandler
         ): DokkaContext =
-            DokkaContextConfigurationImpl(logger, configuration, platforms).apply {
+            DokkaContextConfigurationImpl(logger, configuration, platforms, unresolvedTypeHandler).apply {
                 configuration.pluginsClasspath.map { it.relativeTo(File(".").absoluteFile).toURI().toURL() }
                     .toTypedArray()
                     .let { URLClassLoader(it, this.javaClass.classLoader) }
@@ -43,7 +48,19 @@ interface DokkaContext {
     }
 }
 
-inline fun <reified T: DokkaPlugin> DokkaContext.plugin(): T = plugin(T::class)
+enum class UnresolvedTypeHandler(val response: (KotlinType?) -> String? = { it?.fqName?.asString() }) {
+    Exception({ type ->
+        if (type?.isError != false) throw IllegalStateException("Unresolved type: $type") else type?.fqName?.asString()
+    }),
+    Skip({ type -> null }),
+    Approximate({ type ->
+        type?.fqName?.asString() // todo
+    });
+
+    operator fun invoke(type: KotlinType?) = response(type)
+}
+
+inline fun <reified T : DokkaPlugin> DokkaContext.plugin(): T = plugin(T::class)
     ?: throw java.lang.IllegalStateException("Plugin ${T::class.qualifiedName} is not present in context.")
 
 interface DokkaContextConfiguration {
@@ -53,7 +70,8 @@ interface DokkaContextConfiguration {
 private class DokkaContextConfigurationImpl(
     override val logger: DokkaLogger,
     override val configuration: DokkaConfiguration,
-    override val platforms: Map<PlatformData, EnvironmentAndFacade>
+    override val platforms: Map<PlatformData, EnvironmentAndFacade>,
+    override val unresolvedTypeHandler: UnresolvedTypeHandler = UnresolvedTypeHandler.Exception
 ) : DokkaContext, DokkaContextConfiguration {
     private val plugins = mutableMapOf<KClass<*>, DokkaPlugin>()
     private val pluginStubs = mutableMapOf<KClass<*>, DokkaPlugin>()
@@ -74,9 +92,9 @@ private class DokkaContextConfigurationImpl(
 
         fun visit(n: Extension<*>) {
             val state = verticesWithState[n]
-            if(state == State.VISITED)
+            if (state == State.VISITED)
                 return
-            if(state == State.VISITING)
+            if (state == State.VISITING)
                 throw Error("Detected cycle in plugins graph")
             verticesWithState[n] = State.VISITING
             adjacencyList[n]?.forEach { visit(it) }
@@ -84,8 +102,8 @@ private class DokkaContextConfigurationImpl(
             result += n
         }
 
-        for((vertex, state) in verticesWithState) {
-            if(state == State.UNVISITED)
+        for ((vertex, state) in verticesWithState) {
+            if (state == State.UNVISITED)
                 visit(vertex)
         }
         result.asReversed().forEach {
@@ -109,7 +127,7 @@ private class DokkaContextConfigurationImpl(
             1 -> extensions.single().action.get(this)
             else -> {
                 val notFallbacks = extensions.filterNot { it.isFallback }
-                if (notFallbacks.size == 1)  notFallbacks.single().action.get(this) else throwBadArity("many were")
+                if (notFallbacks.size == 1) notFallbacks.single().action.get(this) else throwBadArity("many were")
             }
         }
     }

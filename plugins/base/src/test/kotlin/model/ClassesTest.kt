@@ -288,6 +288,18 @@ class ClassesTest : AbstractModelTest("/src/main/kotlin/classes/Test.kt", "class
         }
     }
 
+    @Test(expected = IllegalStateException::class)
+    fun unresolvedType() {
+        inlineModelTest(
+            """
+                |class C {
+                |   val t: Afsfasf? = null 
+                |}
+            """.trimIndent()
+        )
+        {}
+    }
+
 //                // TODO modifiers
 //    @Test fun innerClass() {
 //        verifyPackageMember("testdata/classes/innerClass.kt", defaultModelConfig) { cls ->

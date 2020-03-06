@@ -16,20 +16,23 @@ interface TypeWrapper {
     val dri: DRI?
 }
 
-class KotlinTypeWrapper(private val kotlinType: KotlinType) : TypeWrapper {
-    private val declarationDescriptor = kotlinType.constructor.declarationDescriptor
-    private val fqNameSafe = declarationDescriptor?.fqNameSafe
-    override val constructorFqName = fqNameSafe?.asString()
-    override val constructorNamePathSegments: List<String> =
-        fqNameSafe?.pathSegments()?.map { it.asString() } ?: emptyList()
-    override val arguments: List<KotlinTypeWrapper> by lazy {
-        kotlinType.arguments.map {
+class KotlinTypeWrapper(
+    override val constructorFqName: String?,
+    override val constructorNamePathSegments: List<String> = constructorFqName?.split(".").orEmpty(),
+    override val arguments: List<KotlinTypeWrapper> = emptyList(),
+    override val dri: DRI?
+) : TypeWrapper {
+    constructor(kotlinType: KotlinType) : this(
+        constructorFqName = kotlinType.constructor.declarationDescriptor?.fqNameSafe?.asString(),
+        constructorNamePathSegments = kotlinType.constructor.declarationDescriptor?.fqNameSafe?.pathSegments()?.map { it.asString() }
+            ?: emptyList(),
+        arguments = kotlinType.arguments.map {
             KotlinTypeWrapper(
                 it.type
             )
-        }
-    }
-    override val dri: DRI? by lazy { declarationDescriptor?.let { DRI.from(it) } }
+        },
+        dri = kotlinType.constructor.declarationDescriptor?.let { DRI.from(it) }
+    )
 }
 
 class JavaTypeWrapper : TypeWrapper {
