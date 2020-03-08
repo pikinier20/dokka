@@ -132,6 +132,7 @@ data class Package(
     override val properties: List<Property>,
     override val classlikes: List<Classlike>,
     override val packages: List<Package>,
+    val typealiases: List<TypeAlias>,
     override val documentation: PlatformDependent<DocumentationNode>,
     override val platformData: List<PlatformData>,
     override val extra: PropertyContainer<Package> = PropertyContainer.empty()
@@ -334,6 +335,20 @@ data class TypeParameter(
         get() = emptyList()
 
     override fun withNewExtras(newExtras: PropertyContainer<TypeParameter>) = copy(extra = newExtras)
+}
+
+data class TypeAlias(
+    override val dri: DRI,
+    override val name: String,
+    val underlyingType: DRI,
+    override val documentation: PlatformDependent<DocumentationNode>,
+    override val platformData: List<PlatformData>,
+    override val extra: PropertyContainer<TypeAlias> = PropertyContainer.empty()
+) : Documentable(), WithExtraProperties<TypeAlias> {
+    override val children: List<Nothing>
+        get() = emptyList()
+
+    override fun withNewExtras(newExtras: PropertyContainer<TypeAlias>) = copy(extra = newExtras)
 }
 
 sealed class Projection

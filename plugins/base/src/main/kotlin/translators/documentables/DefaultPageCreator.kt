@@ -25,7 +25,8 @@ open class DefaultPageCreator(
         p.name, contentForPackage(p), setOf(p.dri), p,
         p.classlikes.map(::pageForClasslike) +
                 p.functions.map(::pageForFunction) +
-                p.packages.map(::pageForPackage)
+                p.packages.map(::pageForPackage) +
+                p.typealiases.map(::pageForTypeAlias)
     )
 
     open fun pageForClasslike(c: Classlike): ClasslikePageNode {
@@ -41,6 +42,8 @@ open class DefaultPageCreator(
 
     open fun pageForFunction(f: Function) = MemberPageNode(f.name, contentForFunction(f), setOf(f.dri), f)
 
+    open fun pageForTypeAlias(t: TypeAlias) = MemberPageNode(t.name, contentForTypeAlias(t), setOf(t.dri), t)
+
     protected open fun contentForModule(m: Module) = contentBuilder.contentFor(m) {
         header(1) { text(m.name) }
         block("Packages", 2, ContentKind.Packages, m.packages, m.platformData.toSet()) {
@@ -53,6 +56,11 @@ open class DefaultPageCreator(
     protected open fun contentForPackage(p: Package) = contentBuilder.contentFor(p) {
         header(1) { text("Package ${p.name}") }
         +contentForScope(p, p.dri, p.platformData)
+        block("Type aliases", 2, ContentKind.Classlikes, p.typealiases, p.platformData.toSet()) {
+            link(it.name, it.dri)
+            +buildSignature(it)
+            text(it.briefDocTagString)
+        }
     }
 
     protected open fun contentForScope(
@@ -113,6 +121,12 @@ open class DefaultPageCreator(
             text(it.name ?: "<receiver>")
             it.documentation.forEach { it.value.children.forEach { comment(it.root) } }
         }
+    }
+
+    protected open fun contentForTypeAlias(t: TypeAlias) = contentBuilder.contentFor(t) {
+        header(1) { text(t.name) }
+        +buildSignature(t)
+        +contentForComments(t)
     }
 
     protected open fun TagWrapper.toHeaderString() = this.javaClass.toGenericString().split('.').last()
