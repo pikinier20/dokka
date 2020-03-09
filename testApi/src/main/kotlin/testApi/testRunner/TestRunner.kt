@@ -138,7 +138,7 @@ abstract class AbstractCoreTest {
         var cacheRoot: String? = null
         var pluginsClasspath: List<File> = emptyList()
         private val passesConfigurations = mutableListOf<PassConfigurationImpl>()
-        private var unresolvedTypeHandler: UnresolvedTypeHandler = UnresolvedTypeHandler.Exception
+        var unresolvedTypeHandler: UnresolvedTypeHandler = UnresolvedTypeHandler.Exception
 
         fun build() = DokkaConfigurationImpl(
             outputDir = outputDir,

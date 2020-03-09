@@ -2,8 +2,11 @@ package model
 
 import org.jetbrains.dokka.model.Function
 import org.jetbrains.dokka.model.Package
+import org.jetbrains.dokka.plugability.UnresolvedTypeHandler
 import org.junit.Test
-import utils.*
+import utils.AbstractModelTest
+import utils.assertNotNull
+import utils.comments
 
 class FunctionTest : AbstractModelTest("/src/main/kotlin/function/Test.kt", "function") {
 
@@ -21,6 +24,66 @@ class FunctionTest : AbstractModelTest("/src/main/kotlin/function/Test.kt", "fun
                 name equals "fn"
                 type.constructorFqName equals "kotlin.Unit"
                 this.children.assertCount(0, "Function children: ")
+            }
+        }
+    }
+
+    @Test
+    fun approximateUnresolvedTypeHandler() {
+        inlineModelTest(
+            """
+            |/**
+            | * Function fn
+            | */
+            |fun fn1(): NoType
+            |fun fn2() = emptyList()
+        """,
+            typeHandler = UnresolvedTypeHandler.Approximate
+        ) {
+            with((this / "function").cast<Package>()) {
+                with((this / "fn1").cast<Function>()) {
+                    type.constructorFqName equals "NoType"
+                }
+                with((this / "fn2").cast<Function>()) {
+                    type.constructorFqName equals "Error type"
+                }
+            }
+        }
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun exceptionUnresolvedTypeHandler() {
+        inlineModelTest(
+            """
+            |/**
+            | * Function fn
+            | */
+            |fun fn1(): NoType
+            |fun fn2() = emptyList()
+        """,
+            typeHandler = UnresolvedTypeHandler.Exception
+        ) {
+        }
+    }
+
+    @Test
+    fun skipUnresolvedTypeHandler() {
+        inlineModelTest(
+            """
+            |/**
+            | * Function fn
+            | */
+            |fun fn1(): NoType
+            |fun fn2() = emptyList()
+            |fun fn3() = 1
+        """,
+            typeHandler = UnresolvedTypeHandler.Skip
+        ) {
+            with((this / "function").cast<Package>()) {
+                children counts 1
+                with((this / "fn3").cast<Function>()) {
+                    type.constructorFqName equals "kotlin.Int"
+                }
             }
         }
     }

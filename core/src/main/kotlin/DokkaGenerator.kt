@@ -38,8 +38,7 @@ class DokkaGenerator(
         val context = initializePlugins(
             configuration,
             logger,
-            platforms,
-            unresolvedTypeHandler = configuration.unresolvedTypeHandler
+            platforms
         )
 
         logger.progress("Creating documentation models")
@@ -72,9 +71,8 @@ class DokkaGenerator(
         configuration: DokkaConfiguration,
         logger: DokkaLogger,
         platforms: Map<PlatformData, EnvironmentAndFacade>,
-        pluginOverrides: List<DokkaPlugin> = emptyList(),
-        unresolvedTypeHandler: UnresolvedTypeHandler
-    ) = DokkaContext.create(configuration, logger, platforms, pluginOverrides, unresolvedTypeHandler)
+        pluginOverrides: List<DokkaPlugin> = emptyList()
+    ) = DokkaContext.create(configuration, logger, platforms, pluginOverrides)
 
     fun createDocumentationModels(
         platforms: Map<PlatformData, EnvironmentAndFacade>,

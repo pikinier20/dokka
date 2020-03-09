@@ -25,8 +25,7 @@ internal class DokkaTestGenerator(
             configuration,
             logger,
             platforms,
-            pluginOverrides,
-            UnresolvedTypeHandler.Exception
+            pluginOverrides
         )
         pluginsSetupStage(context)
 
