@@ -12,12 +12,15 @@ import org.jetbrains.dokka.model.properties.PropertyContainer
 import org.jetbrains.dokka.pages.PlatformData
 import org.jetbrains.dokka.parsers.MarkdownParser
 import org.jetbrains.dokka.plugability.DokkaContext
+import org.jetbrains.dokka.plugability.UnresolvedTypeHandler
 import org.jetbrains.dokka.transformers.descriptors.DescriptorToDocumentableTranslator
 import org.jetbrains.kotlin.codegen.isJvmStaticInObjectOrClassOrInterface
 import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.descriptors.Visibility
 import org.jetbrains.kotlin.descriptors.impl.DeclarationDescriptorVisitorEmptyBodies
+import org.jetbrains.kotlin.idea.kdoc.findKDoc
+import org.jetbrains.kotlin.library.metadata.KlibMetadataProtoBuf.fqName
 import org.jetbrains.kotlin.resolve.DescriptorUtils
 import org.jetbrains.kotlin.resolve.calls.components.isVararg
 import org.jetbrains.kotlin.resolve.calls.tasks.isDynamic
@@ -29,9 +32,7 @@ import org.jetbrains.kotlin.resolve.scopes.DescriptorKindFilter
 import org.jetbrains.kotlin.resolve.scopes.MemberScope
 import org.jetbrains.kotlin.types.KotlinType
 import org.jetbrains.kotlin.types.TypeProjection
-import org.jetbrains.dokka.model.Variance
-import org.jetbrains.kotlin.library.metadata.KlibMetadataProtoBuf.fqName
-import org.jetbrains.kotlin.idea.kdoc.findKDoc
+import org.jetbrains.kotlin.types.isError
 
 class DefaultDescriptorToDocumentableTranslator(
     private val context: DokkaContext
@@ -218,7 +219,7 @@ private class DokkaDescriptorVisitor( // TODO: close this class and make it priv
             },
             sources = actual,
             getter = descriptor.accessors.filterIsInstance<PropertyGetterDescriptor>().singleOrNull()?.let {
-               visitPropertyAccessorDescriptor(it, descriptor, dri)
+                visitPropertyAccessorDescriptor(it, descriptor, dri)
             },
             setter = descriptor.accessors.filterIsInstance<PropertySetterDescriptor>().singleOrNull()?.let {
                 visitPropertyAccessorDescriptor(it, descriptor, dri)
@@ -243,7 +244,7 @@ private class DokkaDescriptorVisitor( // TODO: close this class and make it priv
             receiver = descriptor.extensionReceiverParameter?.let {
                 visitReceiverParameterDescriptor(it, DRIWithPlatformInfo(dri, actual))
             },
-            parameters = descriptor.valueParameters.mapIndexed { index, desc ->
+            parameters = descriptor.valueParameters.filterTypeError().mapIndexed { index, desc ->
                 parameter(index, desc, DRIWithPlatformInfo(dri, actual))
             },
             sources = actual,
@@ -267,7 +268,7 @@ private class DokkaDescriptorVisitor( // TODO: close this class and make it priv
             receiver = descriptor.extensionReceiverParameter?.let {
                 visitReceiverParameterDescriptor(it, DRIWithPlatformInfo(dri, actual))
             },
-            parameters = descriptor.valueParameters.mapIndexed { index, desc ->
+            parameters = descriptor.valueParameters.filterTypeError().mapIndexed { index, desc ->
                 parameter(index, desc, DRIWithPlatformInfo(dri, actual))
             },
             sources = actual,
@@ -285,7 +286,7 @@ private class DokkaDescriptorVisitor( // TODO: close this class and make it priv
         descriptor: ReceiverParameterDescriptor,
         parent: DRIWithPlatformInfo
     ): Parameter {
-        val  dri = parent.dri.copy(target = 0)
+        val dri = parent.dri.copy(target = 0)
         return Parameter(
             dri = dri,
             name = null,
@@ -325,7 +326,7 @@ private class DokkaDescriptorVisitor( // TODO: close this class and make it priv
             if (isGetter) {
                 emptyList()
             } else {
-                listOf(propertyDescriptor.asParameter(dri))
+                listOfNotNull(propertyDescriptor.takeIf { it.isErrorType() }?.asParameter(dri))
             }
 
         return Function(
@@ -365,11 +366,13 @@ private class DokkaDescriptorVisitor( // TODO: close this class and make it priv
 
     private fun MemberScope.functions(parent: DRIWithPlatformInfo): List<Function> =
         getContributedDescriptors(DescriptorKindFilter.FUNCTIONS) { true }
+            .filterTypeError()
             .filterIsInstance<FunctionDescriptor>()
             .map { visitFunctionDescriptor(it, parent) }
 
     private fun MemberScope.properties(parent: DRIWithPlatformInfo): List<Property> =
         getContributedDescriptors(DescriptorKindFilter.VALUES) { true }
+            .filterTypeError()
             .filterIsInstance<PropertyDescriptor>()
             .mapNotNull { visitPropertyDescriptor(it, parent) }
 
@@ -508,12 +511,23 @@ private class DokkaDescriptorVisitor( // TODO: close this class and make it priv
         container + AdditionalModifiers(this)
 
     fun DeclarationDescriptor.convertType(dri: DRI, context: DokkaContext): TypeWrapper = when (val desc = this) {
-                is ValueParameterDescriptor -> desc.type
-                is FunctionDescriptor -> desc.returnType
-                is PropertyDescriptor -> desc.returnType
-                is ReceiverParameterDescriptor -> desc.type
-                else -> null
-            }?.let { context.unresolvedTypeHandler(it) }?.let { KotlinTypeWrapper(constructorFqName = it, dri = dri) }!!
+        is ValueParameterDescriptor -> desc.type
+        is FunctionDescriptor -> desc.returnType
+        is PropertyDescriptor -> desc.returnType
+        is ReceiverParameterDescriptor -> desc.type
+        else -> null
+    }?.let { context.unresolvedTypeHandler(it) }?.let { KotlinTypeWrapper(constructorFqName = it, dri = dri) }!!
+
+    inline fun <reified T: DeclarationDescriptor> Collection<T>.filterTypeError() =
+        if (context.unresolvedTypeHandler == UnresolvedTypeHandler.Skip) {
+            this.filterNot { it.isErrorType() }
+        } else this
+
+    fun DeclarationDescriptor.isErrorType() =
+        (this is FunctionDescriptor && this.returnType?.isError != false) ||
+                (this is ValueParameterDescriptor && this.type.isError) ||
+                (this is PropertyDescriptor && this.type.isError) ||
+                (this is ReceiverParameterDescriptor && this.type.isError)
 
     data class ClassInfo(val supertypes: List<DRI>, val docs: PlatformDependent<DocumentationNode>)
 
