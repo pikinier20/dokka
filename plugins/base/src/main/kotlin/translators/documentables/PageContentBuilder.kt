@@ -3,9 +3,7 @@ package org.jetbrains.dokka.base.translators.documentables
 import org.jetbrains.dokka.base.signatures.SignatureProvider
 import org.jetbrains.dokka.base.transformers.pages.comments.CommentsToContentConverter
 import org.jetbrains.dokka.links.DRI
-import org.jetbrains.dokka.model.Documentable
-import org.jetbrains.dokka.model.PlatformDependent
-import org.jetbrains.dokka.model.TypeWrapper
+import org.jetbrains.dokka.model.*
 import org.jetbrains.dokka.model.doc.DocTag
 import org.jetbrains.dokka.model.properties.PropertyContainer
 import org.jetbrains.dokka.pages.*

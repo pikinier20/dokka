@@ -6,6 +6,8 @@ import com.intellij.psi.PsiPrimitiveType
 import com.intellij.psi.PsiType
 import com.intellij.psi.impl.source.PsiClassReferenceType
 import org.jetbrains.dokka.links.DRI
+import org.jetbrains.kotlin.builtins.isExtensionFunctionType
+import org.jetbrains.kotlin.builtins.isFunctionType
 import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
 import org.jetbrains.kotlin.types.KotlinType
 
@@ -30,6 +32,8 @@ class KotlinTypeWrapper(private val kotlinType: KotlinType) : TypeWrapper {
         }
     }
     override val dri: DRI? by lazy { declarationDescriptor?.let { DRI.from(it) } }
+    val isExtension: Boolean = kotlinType.isExtensionFunctionType
+    val isFunctionType: Boolean = kotlinType.isFunctionType
 }
 
 class JavaTypeWrapper : TypeWrapper {

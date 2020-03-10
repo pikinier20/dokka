@@ -11,6 +11,7 @@ abstract class AbstractModelTest(val path: String? = null, val pkg: String) : Mo
         platform: String = "jvm",
         targetList: List<String> = listOf("jvm"),
         prependPackage: Boolean = true,
+        cleanupOutput: Boolean = true,
         block: Module.() -> Unit
     ) {
         val configuration = dokkaConfiguration {
@@ -24,7 +25,7 @@ abstract class AbstractModelTest(val path: String? = null, val pkg: String) : Mo
         }
         val prepend = path.let { p -> p?.let { "|$it\n" } ?: "" } + if(prependPackage) "|package $pkg" else ""
 
-        testInline(("$prepend\n$query").trim().trimIndent(), configuration) {
+        testInline(("$prepend\n$query").trim().trimIndent(), configuration, cleanupOutput) {
             documentablesTransformationStage = block
         }
     }

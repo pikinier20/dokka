@@ -9,7 +9,6 @@ import org.jetbrains.dokka.model.Enum
 import org.jetbrains.dokka.model.Function
 import org.jetbrains.dokka.pages.ContentKind
 import org.jetbrains.dokka.pages.ContentNode
-import org.jetbrains.dokka.pages.PlatformData
 import org.jetbrains.dokka.utilities.DokkaLogger
 
 class KotlinSignatureProvider(ctcc: CommentsToContentConverter, logger: DokkaLogger) : SignatureProvider {
@@ -64,7 +63,12 @@ class KotlinSignatureProvider(ctcc: CommentsToContentConverter, logger: DokkaLog
         list(f.parameters) {
             link(it.name!!, it.dri)
             text(": ")
-            type(it.type)
+
+            val type = it.type
+            when {
+                type is KotlinTypeWrapper && type.isFunctionType -> funType(type)
+                else -> type(type)
+            }
         }
         text(")")
         val returnType = f.type
@@ -102,5 +106,22 @@ class KotlinSignatureProvider(ctcc: CommentsToContentConverter, logger: DokkaLog
             signatureForProjection(p.inner)
             text("?")
         }
+    }
+
+    fun PageContentBuilder.DocumentableContentBuilder.funType(type: KotlinTypeWrapper) {
+        val args = if (type.isExtension) {
+            type(type.arguments.first())
+            text(".")
+            type.arguments.drop(1)
+        } else
+            type.arguments
+
+        text("(")
+        args.subList(0, args.size - 1).forEachIndexed { i, arg ->
+            type(arg)
+            if (i < args.size - 2) text(", ")
+        }
+        text(") -> ")
+        type(args.last())
     }
 }
