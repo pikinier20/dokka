@@ -65,10 +65,8 @@ class KotlinSignatureProvider(ctcc: CommentsToContentConverter, logger: DokkaLog
             text(": ")
 
             val type = it.type
-            when {
-                type is KotlinTypeWrapper && type.isFunctionType -> funType(type)
-                else -> type(type)
-            }
+            if (type is KotlinTypeWrapper && type.isFunctionType) funType(type)
+            else type(type)
         }
         text(")")
         val returnType = f.type
@@ -109,9 +107,12 @@ class KotlinSignatureProvider(ctcc: CommentsToContentConverter, logger: DokkaLog
     }
 
     fun PageContentBuilder.DocumentableContentBuilder.funType(type: KotlinTypeWrapper) {
-        val args = if (type.isExtension) {
+        if (type.isExtension) {
             type(type.arguments.first())
             text(".")
+        }
+
+        val args = if (type.isExtension) {
             type.arguments.drop(1)
         } else
             type.arguments
