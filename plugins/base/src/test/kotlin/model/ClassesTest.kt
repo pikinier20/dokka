@@ -1,11 +1,8 @@
 package model
 
 import org.jetbrains.dokka.model.*
-import org.jetbrains.dokka.model.KotlinModifier.*
 import org.jetbrains.dokka.model.Function
-import org.jetbrains.dokka.model.Object
-import org.jetbrains.dokka.model.WithAbstraction.Modifier
-import org.jetbrains.kotlin.descriptors.Visibilities
+import org.jetbrains.dokka.model.KotlinModifier.*
 import org.junit.jupiter.api.Test
 import utils.AbstractModelTest
 import utils.assertNotNull
@@ -153,7 +150,7 @@ class ClassesTest : AbstractModelTest("/src/main/kotlin/classes/Test.kt", "class
                 name equals "Klass"
                 visibility.values allEquals KotlinVisibility.Public
                 with(extra[AdditionalModifiers.AdditionalKey].assertNotNull("Extras")) {
-                    content.find{it == ExtraModifiers.DATA}.assertNotNull("data modifier")
+                    content.find { it == ExtraModifiers.DATA }.assertNotNull("data modifier")
                 }
             }
         }

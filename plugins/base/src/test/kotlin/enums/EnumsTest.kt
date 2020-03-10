@@ -3,11 +3,9 @@ package enums
 import org.jetbrains.dokka.model.Enum
 import org.jetbrains.dokka.pages.ClasslikePageNode
 import org.jetbrains.dokka.pages.ModulePageNode
-import org.junit.Assert.*
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.jetbrains.dokka.testApi.testRunner.AbstractCoreTest
+import org.junit.jupiter.api.Assertions.*
 
 class EnumsTest : AbstractCoreTest() {
 
@@ -67,11 +65,11 @@ class EnumsTest : AbstractCoreTest() {
             configuration
         ) {
             documentablesCreationStage = {m ->
-                assertTrue("Module list cannot be empty", m.isNotEmpty())
+                assertTrue(m.isNotEmpty(), "Module list cannot be empty")
                 m.first().packages.let { p ->
-                    assertTrue("Package list cannot be empty", p.isNotEmpty())
+                    assertTrue(p.isNotEmpty(), "Package list cannot be empty")
                     p.first().classlikes.let { c ->
-                        assertTrue("Classlikes list cannot be empty", c.isNotEmpty())
+                        assertTrue(c.isNotEmpty(), "Classlikes list cannot be empty")
 
                         val enum = c.first() as Enum
                         assertEquals(enum.name, "Test")
